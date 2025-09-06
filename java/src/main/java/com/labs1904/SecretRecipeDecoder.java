@@ -1,8 +1,17 @@
 package com.labs1904;
 
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class SecretRecipeDecoder {
     private static Map<String, String> ENCODING = new HashMap<String, String>() {
@@ -52,8 +61,16 @@ public class SecretRecipeDecoder {
      * @return
      */
     public static String decodeString(String str) {
-        // TODO: implement me
-        return "1 cup";
+
+        StringBuilder emptyString = new StringBuilder();
+
+        for (char s: str.toCharArray()) {
+            String toChars = ENCODING.getOrDefault(String.valueOf(s),String.valueOf(s));
+            emptyString.append(toChars);
+        }
+        return emptyString.toString();
+
+
     }
 
     /**
@@ -62,11 +79,30 @@ public class SecretRecipeDecoder {
      * @return
      */
     public static Ingredient decodeIngredient(String line) {
-        // TODO: implement me
-        return new Ingredient("1 cup", "butter");
+       // return new Ingredient("1 cup", "butter");
+        String[] splitter = line.split("#");
+        String parts = decodeString(splitter[0]);
+        String ingredient = decodeString(splitter[1]);
+
+        return new Ingredient(parts, ingredient);
     }
 
     public static void main(String[] args) {
-        // TODO: implement me
+        try {
+            List<String> decodedLines = Files.readAllLines(Paths.get("src/main/resources/secret_recipe.txt"))
+                    .stream()
+                    .filter(line -> !line.trim().isEmpty())
+                    .map(line -> {
+                        Ingredient decoded = decodeIngredient(line);
+                        return decoded.getAmount() + " " + decoded.getDescription();
+                    })
+                    .collect(Collectors.toList());
+
+            Files.write(Paths.get("decoded_recipe.txt"), decodedLines);
+            System.out.println("Recipe decoded successfully!");
+
+        } catch (Exception e) {
+            System.err.println("Error: " + e.getMessage());
+        }
     }
 }
